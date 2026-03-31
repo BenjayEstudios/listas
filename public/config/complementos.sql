@@ -28,3 +28,5 @@ CREATE TABLE items_lista (
         ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
+CREATE USER 'complentosDB'@'localhost' IDENTIFIED BY 'complementosDB';
+GRANT ALL PRIVILEGES ON complementos.* TO 'complentosDB'@'localhost';
