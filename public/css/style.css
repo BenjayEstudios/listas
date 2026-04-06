@@ -1,166 +1,169 @@
-:root {
-    /* Paleta Dark Mode Profesional */
-    --bg: #0f172a;           /* Azul muy oscuro (Slate 900) */
-    --card-bg: #1e293b;      /* Slate 800 */
-    --primary: #38bdf8;      /* Cian brillante (Sky 400) */
-    --primary-hover: #0ea5e9;
-    --text-main: #f1f5f9;    /* Casi blanco */
-    --text-muted: #94a3b8;   /* Gris azulado */
-    --border: #334155;       /* Slate 700 */
-    --accent: #10b981;       /* Esmeralda para estados activos */
+/* --- SISTEMA DE TEMAS --- */
+:root[data-theme="light"] {
+    --bg: #ffffff;
+    --surface: #f8fafc;
+    --text-main: #0f172a;
+    --text-muted: #64748b;
+    --border: #e2e8f0;
+    --primary: #f97316; /* Naranja Vibrante */
+    --item-bg: #ffffff;
 }
 
-* {
-    box-sizing: border-box;
+:root[data-theme="dark"] {
+    --bg: #000000; /* OLED Black */
+    --surface: #121212; 
+    --text-main: #f8fafc;
+    --text-muted: #808080;
+    --border: #262626;
+    --primary: #f97316;
+    --item-bg: #121212;
+}
+
+/* --- RESET Y BASE --- */
+* { 
+    margin: 0; padding: 0; box-sizing: border-box; 
+    font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
     -webkit-tap-highlight-color: transparent;
 }
 
 body {
-    font-family: 'Inter', -apple-system, system-ui, sans-serif;
     background-color: var(--bg);
     color: var(--text-main);
-    margin: 0;
-    padding: 15px;
-    display: flex;
+    transition: background-color 0.3s ease;
+    display: flex; 
     justify-content: center;
-    min-height: 100vh;
+    /* overflow: hidden;  Previene scroll global accidental */
 }
 
-.card {
-    background: var(--card-bg);
+/* --- LAYOUT PRINCIPAL (App Nativa) --- */
+.app-container {
     width: 100%;
     max-width: 480px;
-    margin-top: 20px;
-    padding: 1.8rem;
-    border-radius: 24px;
-    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
-    border: 1px solid var(--border);
+    height: 100vh;
+    height: 100dvh; /* Altura dinámica para móviles */
+    display: flex;
+    flex-direction: column;
 }
 
-h1 {
-    font-size: 1.4rem;
-    margin-bottom: 1.8rem;
-    text-align: center;
+header {
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center;
+    padding: 16px 20px;
+    background: var(--bg);
+    z-index: 10;
+}
+
+.brand { font-weight: 800; font-size: 1.3rem; letter-spacing: -0.5px; }
+.brand span { color: var(--primary); }
+
+.card {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 0 20px;
+    background: transparent;
+    border: none;
+}
+
+/* --- MANEJO DE VISTAS Y SCROLL (Crítico) --- */
+#vistaListas, #vistaItems {
+    height: 100%; 
+    flex-direction: column;
+    overflow: hidden; /* Obliga al scroll a ocurrir solo en .scroll-area */
+}
+
+/* Evita que JS ponga 'block' rompiendo el flexbox */
+#vistaListas[style*="display: block"], #vistaItems[style*="display: block"] {
+    display: flex !important;
+}
+
+.scroll-area {
+    flex: 1; 
+    overflow-y: auto;
+    padding-bottom: 30px;
+}
+.scroll-area::-webkit-scrollbar { display: none; } /* Oculta scrollbar */
+
+/* --- TIPOGRAFÍA Y FORMS --- */
+h1, h2 { 
+    font-size: 1.5rem; 
+    margin-bottom: 16px; 
     font-weight: 700;
-    color: var(--primary);
     letter-spacing: -0.5px;
 }
 
-.input-group {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    margin-bottom: 2rem;
+.input-compact {
+    display: flex; 
+    gap: 10px; 
+    margin-bottom: 16px;
+    align-items: center; 
 }
 
-input {
-    width: 100%;
-    padding: 14px;
-    background: #0f172a; /* Fondo más oscuro que la card */
-    border: 2px solid var(--border);
-    border-radius: 14px;
-    font-size: 16px;
-    color: var(--text-main);
-    transition: all 0.3s ease;
-    outline: none;
-}
-
-input:focus {
-    border-color: var(--primary);
-    background: #1e293b;
-}
-
-input::placeholder {
-    color: #475569;
-}
-
-button {
-    padding: 14px;
-    border: none;
-    border-radius: 14px;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all 0.2s;
-}
-
-.btn-add {
-    background: var(--primary);
-    color: #0f172a; /* Texto oscuro sobre fondo claro */
-}
-
-.btn-add:hover {
-    background: var(--primary-hover);
-    transform: translateY(-1px);
-}
-
-.btn-edit {
-    background: rgba(56, 189, 248, 0.1); /* Fondo sutil */
-    color: var(--primary);
-    border: 1px solid rgba(56, 189, 248, 0.2);
-    padding: 8px 16px;
-    font-size: 13px;
-}
-
-.btn-edit:hover {
-    background: rgba(56, 189, 248, 0.2);
-}
-
-/* Items de la lista */
-.list-item {
-    background: rgba(255, 255, 255, 0.02);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 16px;
-    margin-bottom: 12px;
+.input-compact input {
+    flex: 1;
+    min-width: 0; 
+    background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: 16px;
-    animation: fadeIn 0.4s ease forwards;
-}
-
-.list-item strong {
+    padding: 14px 16px; 
+    border-radius: 12px;
     color: var(--text-main);
-    font-size: 1rem;
+    font-size: 15px;
+    outline: none;
+    transition: border-color 0.2s;
 }
 
-.list-item small {
-    color: var(--text-muted);
-    font-size: 0.8rem;
-    display: block;
-    margin-top: 4px;
-}
+.input-compact input:focus { border-color: var(--primary); }
 
-@keyframes fadeIn {
-    from { opacity: 0; transform: scale(0.95); }
-    to { opacity: 1; transform: scale(1); }
+/* --- BOTONES --- */
+.btn-primary {
+    flex-shrink: 0; /* Previene deformación */
+    background: var(--primary);
+    color: #fff;
+    border: none;
+    width: 50px; 
+    height: 50px; 
+    border-radius: 12px;
+    font-size: 24px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
 }
+.btn-primary:active { transform: scale(0.95); }
 
-/* Scrollbar personalizada para que no brille el blanco */
-::-webkit-scrollbar {
-    width: 8px;
-}
-::-webkit-scrollbar-track {
-    background: var(--bg);
-}
-::-webkit-scrollbar-thumb {
-    background: var(--border);
-    border-radius: 10px;
-}
-/* Efecto de transición suave para el tachado */
-.list-item span {
-    transition: all 0.3s ease;
-}
+.btn-icon { background: none; border: none; font-size: 1.4rem; cursor: pointer; padding: 4px; }
+.btn-back { background: none; border: none; color: var(--primary); font-weight: 600; font-size: 15px; margin-bottom: 12px; cursor: pointer; display: inline-flex; align-items: center; }
+.btn-edit { background: transparent; border: none; cursor: pointer; padding: 8px; border-radius: 8px; font-size: 1.1rem; opacity: 0.6; }
+.btn-edit:active { background: var(--surface); opacity: 1; }
 
-/* Estilo para el check manual si prefieres que sea un botón */
-.btn-check {
-    background: none;
-    border: 2px solid var(--primary);
-    color: var(--primary);
-    padding: 5px;
-    border-radius: 50%;
-    width: 30px;
-    height: 30px;
-    display: flex;
+/* --- COMPONENTES DE LISTA --- */
+.list-item {
+    background: var(--item-bg);
+    margin-bottom: 8px;
+    padding: 14px 16px;
+    border-radius: 12px;
+    display: flex; 
     align-items: center;
-    justify-content: center;
+    justify-content: space-between;
+    border: 1px solid var(--border);
+    transition: transform 0.1s, opacity 0.3s;
 }
+.list-item:active { transform: scale(0.98); }
+
+.item-content { flex: 1; margin-right: 10px; overflow: hidden; }
+.item-content strong { display: block; font-size: 15px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.item-content small { font-size: 12px; color: var(--text-muted); margin-top: 2px; display: block;}
+
+/* Checkbox visual */
+.check-circle {
+    width: 24px; height: 24px;
+    border: 2px solid var(--primary);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    margin-right: 14px;
+    font-size: 12px;
+    color: var(--bg);
+    flex-shrink: 0;
+    transition: background 0.2s;
+}
+.check-circle.active { background: var(--primary); }

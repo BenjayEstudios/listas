@@ -1,15 +1,25 @@
-// Configuración de rutas
+// --- CONFIGURACIÓN DE TEMA ---
+function toggleTheme() {
+    const html = document.documentElement;
+    const currentTheme = html.getAttribute('data-theme');
+    const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+    
+    html.setAttribute('data-theme', newTheme);
+    localStorage.setItem('theme', newTheme);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const savedTheme = localStorage.getItem('theme') || 'dark';
+    document.documentElement.setAttribute('data-theme', savedTheme);
+    obtenerListas();
+});
+
+// --- RUTAS Y ESTADO ---
 const API_LISTAS = 'api/listas.php';
 const API_ITEMS  = 'api/items.php';
-
-// Estado de la aplicación
 let listaIdActual = null;
 
-/**
- * 1. LÓGICA DE LISTAS (PADRE)
- */
-
-// Cargar todas las listas al iniciar
+// --- 1. LÓGICA DE LISTAS ---
 async function obtenerListas() {
     try {
         const res = await fetch(API_LISTAS);
@@ -20,12 +30,11 @@ async function obtenerListas() {
     }
 }
 
-// Crear una nueva lista
 async function crearNuevaLista() {
     const input = document.getElementById('nombreLista');
     const nombre = input.value.trim();
 
-    if (!nombre) return alert("Escribe un nombre para la lista");
+    if (!nombre) return;
 
     try {
         await fetch(API_LISTAS, {
@@ -40,81 +49,59 @@ async function crearNuevaLista() {
     }
 }
 
-// EDITAR NOMBRE DE LISTA (La función que faltaba)
 async function editarLista(id, nombreActual) {
     const nuevoNombre = prompt("Editar nombre de la lista:", nombreActual);
-    
     if (!nuevoNombre || nuevoNombre.trim() === "" || nuevoNombre === nombreActual) return;
 
     try {
         const res = await fetch(API_LISTAS, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-                id: id, 
-                nombre: nuevoNombre.trim() 
-            })
+            body: JSON.stringify({ id: id, nombre: nuevoNombre.trim() })
         });
-
         const data = await res.json();
-        if (data.success) {
-            obtenerListas(); // Refrescar para ver el cambio
-        }
+        if (data.success) obtenerListas();
     } catch (error) {
         console.error("Error al editar lista:", error);
     }
 }
 
-// Dibujar listas en el HTML
 function renderizarListas(listas) {
     const contenedor = document.getElementById('contenedorListas');
-    
     if (listas.length === 0) {
         contenedor.innerHTML = '<p style="color: var(--text-muted); text-align:center; padding:20px;">No hay listas creadas.</p>';
         return;
     }
 
     contenedor.innerHTML = listas.map(lista => `
-        <div class="list-item" onclick="verDetalleLista(${lista.id}, '${lista.nombre}')" style="cursor:pointer">
-            <div style="flex: 1;">
+        <div class="list-item" onclick="verDetalleLista(${lista.id}, '${lista.nombre.replace(/'/g, "\\'")}')" style="cursor:pointer">
+            <div class="item-content">
                 <strong>${lista.nombre}</strong>
-                <small style="display:block; opacity:0.6;">Creado por ${lista.creador}</small>
+                <small>Creado por ${lista.creador}</small>
             </div>
-            <button class="btn-edit" onclick="event.stopPropagation(); editarLista(${lista.id}, '${lista.nombre}')">
-                ✏️
-            </button>
+            <button class="btn-edit" onclick="event.stopPropagation(); editarLista(${lista.id}, '${lista.nombre.replace(/'/g, "\\'")}')">✏️</button>
         </div>
     `).join('');
 }
 
-/**
- * 2. LÓGICA DE NAVEGACIÓN
- */
-
-async function verDetalleLista(id, nombre) {
+// --- 2. NAVEGACIÓN ---
+function verDetalleLista(id, nombre) {
     listaIdActual = id;
-    
-    // Intercambio visual de pantallas
+    // Usamos 'flex' en lugar de 'block' para no romper el layout
     document.getElementById('vistaListas').style.display = 'none';
-    document.getElementById('vistaItems').style.display = 'block';
-    
-    // Actualizar título
+    document.getElementById('vistaItems').style.display = 'flex'; 
     document.getElementById('tituloListaActual').innerText = nombre;
-    
     cargarItems();
 }
 
 function regresarAListas() {
-    document.getElementById('vistaListas').style.display = 'block';
+    document.getElementById('vistaListas').style.display = 'flex'; 
     document.getElementById('vistaItems').style.display = 'none';
     listaIdActual = null;
     obtenerListas();
 }
 
-/**
- * 3. LÓGICA DE ITEMS (HIJOS)
- */
-
+// --- 3. LÓGICA DE ÍTEMS ---
 async function cargarItems() {
     try {
         const res = await fetch(`${API_ITEMS}?lista_id=${listaIdActual}`);
@@ -126,21 +113,17 @@ async function cargarItems() {
             return;
         }
 
-        contenedor.innerHTML = items.map(item => `
-            <div class="list-item" style="display: flex; align-items: center; gap: 10px;">
-                <div onclick="toggleItem(${item.id}, ${item.completado})" 
-                    style="cursor:pointer; width: 24px; height: 24px; border-radius: 50%; 
-                            border: 2px solid var(--primary); 
-                            background: ${item.completado ? 'var(--primary)' : 'transparent'};
-                            display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-                    ${item.completado ? '✓' : ''}
+        contenedor.innerHTML = items.map(item => {
+            const estaCompletado = Number(item.completado) === 1;
+            return `
+                <div class="list-item" onclick="toggleItem(${item.id}, ${estaCompletado ? 1 : 0})" style="cursor:pointer;">
+                    <div class="check-circle ${estaCompletado ? 'active' : ''}">${estaCompletado ? '✓' : ''}</div>
+                    <div class="item-content" style="${estaCompletado ? 'text-decoration: line-through; opacity: 0.5;' : ''}">
+                        <strong>${item.contenido}</strong>
+                    </div>
                 </div>
-
-                <span style="flex: 1; ${item.completado ? 'text-decoration: line-through; opacity: 0.5;' : ''}">
-                    ${item.contenido}
-                </span>
-            </div>
-        `).join('');
+            `;
+        }).join('');
     } catch (error) {
         console.error("Error al cargar items:", error);
     }
@@ -156,12 +139,8 @@ async function crearItem() {
         await fetch(API_ITEMS, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-                lista_id: listaIdActual, 
-                contenido: contenido 
-            })
+            body: JSON.stringify({ lista_id: listaIdActual, contenido: contenido })
         });
-
         input.value = '';
         cargarItems();
     } catch (error) {
@@ -171,22 +150,14 @@ async function crearItem() {
 
 async function toggleItem(id, estadoActual) {
     const nuevoEstado = estadoActual === 0 ? 1 : 0;
-
     try {
         await fetch(API_ITEMS, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-                id: id, 
-                completado: nuevoEstado 
-            })
+            body: JSON.stringify({ id: id, completado: nuevoEstado })
         });
-        
         cargarItems();
     } catch (error) {
         console.error("Error al actualizar item:", error);
     }
 }
-
-// Iniciar la app al cargar el DOM
-document.addEventListener('DOMContentLoaded', obtenerListas);
