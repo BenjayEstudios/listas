@@ -138,9 +138,10 @@ h1, h2 {
 
 /* --- COMPONENTES DE LISTA --- */
 .list-item {
+    gap: 12px;
+    padding: 12px;
     background: var(--item-bg);
     margin-bottom: 8px;
-    padding: 14px 16px;
     border-radius: 12px;
     display: flex; 
     align-items: center;
@@ -167,3 +168,46 @@ h1, h2 {
     transition: background 0.2s;
 }
 .check-circle.active { background: var(--primary); }
+
+.actions {
+    display: flex;
+    gap: 8px;
+    margin-left: auto; /* Empuja los botones a la derecha */
+}
+
+.btn-edit, .btn-delete, .btn-copy {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1.1rem;
+    padding: 4px;
+    transition: transform 0.2s;
+}
+
+.btn-delete:hover {
+    transform: scale(1.2);
+    filter: drop-shadow(0 0 5px rgba(255,0,0,0.3));
+}
+
+
+/* Animación simple para cuando los ítems cambian de posición */
+.list-item {
+    animation: fadeIn 0.3s ease-out;
+    transition: all 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Estilo opcional para diferenciar más los completados */
+.item-completed {
+    background-color: rgba(255, 255, 255, 0.02); /* Un fondo sutilmente más oscuro */
+}
+
+
+.btn-copy:hover {
+    transform: scale(1.2);
+    filter: drop-shadow(0 0 5px rgba(0, 255, 127, 0.4));
+}

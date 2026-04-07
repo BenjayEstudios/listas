@@ -29,17 +29,26 @@ try {
         // Dentro del switch($method) en api/items.php
         case 'PUT':
             $data = json_decode(file_get_contents('php://input'), true);
-            
-            if (!empty($data['id'])) {
-                // Cambiamos solo el campo 'completado'
-                $stmt = $pdo->prepare("UPDATE items_lista SET completado = ? WHERE id = ?");
-                $stmt->execute([
-                    $data['completado'], // 0 o 1
-                    $data['id']
-                ]);
-                echo json_encode(["success" => true]);
+            if (empty($data['id'])) throw new Exception("ID faltante");
+
+            // Si viene 'op' como update_text, editamos el contenido
+            if (isset($data['op']) && $data['op'] === 'update_text') {
+                $stmt = $pdo->prepare("UPDATE items_lista SET contenido = ? WHERE id = ?");
+                $stmt->execute([$data['contenido'], $data['id']]);
             } else {
-                echo json_encode(["success" => false, "message" => "ID faltante"]);
+                // De lo contrario, es el toggle de completado habitual
+                $stmt = $pdo->prepare("UPDATE items_lista SET completado = ? WHERE id = ?");
+                $stmt->execute([$data['completado'], $data['id']]);
+            }
+            echo json_encode(["success" => true]);
+            break;
+
+        case 'DELETE':
+            $data = json_decode(file_get_contents('php://input'), true);
+            if (!empty($data['id'])) {
+                $stmt = $pdo->prepare("DELETE FROM items_lista WHERE id = ?");
+                $stmt->execute([$data['id']]);
+                echo json_encode(["success" => true]);
             }
             break;
     }

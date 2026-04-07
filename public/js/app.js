@@ -79,9 +79,35 @@ function renderizarListas(listas) {
                 <strong>${lista.nombre}</strong>
                 <small>Creado por ${lista.creador}</small>
             </div>
-            <button class="btn-edit" onclick="event.stopPropagation(); editarLista(${lista.id}, '${lista.nombre.replace(/'/g, "\\'")}')">✏️</button>
+            <div class="actions">
+                <button class="btn-edit" onclick="event.stopPropagation(); editarLista(${lista.id}, '${lista.nombre.replace(/'/g, "\\'")}')">✏️</button>
+                <button class="btn-delete" onclick="event.stopPropagation(); borrarLista(${lista.id})">🗑️</button>
+                <button class="btn-copy" onclick="event.stopPropagation(); copiarLista(${lista.id})">📋</button>
+            </div>
         </div>
     `).join('');
+}
+
+async function borrarLista(id) {
+    const confirmacion = confirm("¿Estás seguro? Se borrará la lista y todos sus elementos contenidos.");
+    if (!confirmacion) return;
+
+    try {
+        const res = await fetch(API_LISTAS, {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: id })
+        });
+        const data = await res.json();
+        
+        if (data.success) {
+            obtenerListas();
+        } else {
+            alert("Error: " + data.message);
+        }
+    } catch (error) {
+        console.error("Error al borrar lista:", error);
+    }
 }
 
 // --- 2. NAVEGACIÓN ---
@@ -105,7 +131,7 @@ function regresarAListas() {
 async function cargarItems() {
     try {
         const res = await fetch(`${API_ITEMS}?lista_id=${listaIdActual}`);
-        const items = await res.json();
+        let items = await res.json(); // Cambiamos const por let para poder ordenar
         const contenedor = document.getElementById('contenedorItems');
 
         if (items.length === 0) {
@@ -113,13 +139,24 @@ async function cargarItems() {
             return;
         }
 
+        // --- LÓGICA DE ORDENAMIENTO ---
+        // Ordenamos: los que NO están completados (0) primero, 
+        // los que SÍ están completados (1) al final.
+        items.sort((a, b) => Number(a.completado) - Number(b.completado));
+
         contenedor.innerHTML = items.map(item => {
             const estaCompletado = Number(item.completado) === 1;
             return `
-                <div class="list-item" onclick="toggleItem(${item.id}, ${estaCompletado ? 1 : 0})" style="cursor:pointer;">
+                <div class="list-item ${estaCompletado ? 'item-completed' : ''}" 
+                     onclick="toggleItem(${item.id}, ${estaCompletado ? 1 : 0})" 
+                     style="cursor:pointer;">
                     <div class="check-circle ${estaCompletado ? 'active' : ''}">${estaCompletado ? '✓' : ''}</div>
                     <div class="item-content" style="${estaCompletado ? 'text-decoration: line-through; opacity: 0.5;' : ''}">
                         <strong>${item.contenido}</strong>
+                    </div>
+                    <div class="actions">
+                        <button class="btn-edit" onclick="event.stopPropagation(); editarItem(${item.id}, '${item.contenido.replace(/'/g, "\\'")}')">✏️</button>
+                        <button class="btn-delete" onclick="event.stopPropagation(); borrarItem(${item.id})">🗑️</button> 
                     </div>
                 </div>
             `;
@@ -145,6 +182,61 @@ async function crearItem() {
         cargarItems();
     } catch (error) {
         console.error("Error al crear item:", error);
+    }
+}
+
+async function editarItem(id, contenidoActual) {
+    const nuevoContenido = prompt("Editar tarea:", contenidoActual);
+    if (!nuevoContenido || nuevoContenido.trim() === "" || nuevoContenido === contenidoActual) return;
+
+    try {
+        const res = await fetch(API_ITEMS, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                id: id, 
+                contenido: nuevoContenido.trim(),
+                op: 'update_text' // Operación específica
+            })
+        });
+        const data = await res.json();
+        if (data.success) cargarItems();
+    } catch (error) {
+        console.error("Error al editar item:", error);
+    }
+}
+
+async function borrarItem(id) {
+    if (!confirm("¿Seguro que quieres eliminar este elemento?")) return;
+
+    try {
+        const res = await fetch(API_ITEMS, {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: id })
+        });
+        const data = await res.json();
+        if (data.success) cargarItems();
+    } catch (error) {
+        console.error("Error al borrar item:", error);
+    }
+}
+async function copiarLista(id) {
+    try {
+        // Usamos el método 'COPY' que definimos en el PHP
+        // Si tu servidor no soporta el método COPY, usa POST y ajusta el PHP
+        const res = await fetch(API_LISTAS, {
+            method: 'COPY', 
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: id })
+        });
+        
+        const data = await res.json();
+        if (data.success) {
+            obtenerListas(); // Refrescar la vista
+        }
+    } catch (error) {
+        console.error("Error al copiar lista:", error);
     }
 }
 
