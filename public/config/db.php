@@ -1,8 +1,8 @@
 <?php
-$host = 'localhost'; // Es más estable que 'localhost' en algunos entornos
+$host = '127.0.0.1'; // Forzamos TCP para evitar problemas de socket en Linux
 $db   = 'complementos';
-$user = 'complementosDB';
-$pass = 'hola123'; // Tu contraseña de MySQL
+$user = 'complentosDB';
+$pass = 'complementosDB';
 $charset = 'utf8mb4';
 
 $dsn = "mysql:host=$host;dbname=$db;charset=$charset";

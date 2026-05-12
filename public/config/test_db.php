@@ -2,8 +2,8 @@
 // Configuración de acceso (Asegúrate que coincidan con lo que creamos en MariaDB)
 $host = '127.0.0.1'; // Forzamos TCP para evitar problemas de socket en Linux
 $db   = 'complementos';
-$user = 'complementosDB';
-$pass = 'hola123';
+$user = 'complentosDB';
+$pass = 'complementosDB';
 $charset = 'utf8mb4';
 
 $dsn = "mysql:host=$host;dbname=$db;charset=$charset";

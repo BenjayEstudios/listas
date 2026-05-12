@@ -117,22 +117,47 @@ h1, h2 {
 
 /* --- BOTONES --- */
 .btn-primary {
-    flex-shrink: 0; /* Previene deformación */
+    flex-shrink: 0;
     background: var(--primary);
     color: #fff;
     border: none;
     width: 50px; 
     height: 50px; 
-    border-radius: 12px;
-    font-size: 24px;
-    font-weight: 600;
+    border-radius: 14px;
+    
+    /* --- SOLUCIÓN AL DESALINEAMIENTO --- */
+    display: flex; 
+    align-items: center; 
+    justify-content: center;
+    
+    font-size: 28px; /* Un poco más grande para que llene mejor el espacio */
+    font-weight: 500; /* Un peso medio suele centrarse mejor que el bold extremo */
+    line-height: 1; /* Obliga a que no haya espacio extra arriba o abajo */
+    padding: 0; /* Eliminamos cualquier padding que venga por defecto */
+    
+    /* Si el carácter "+" sigue viéndose un poco bajo por la fuente, 
+       usa este "truco" de subirlo manualmente 1 o 2 pixeles: */
+    padding-bottom: 6px; 
+    
     cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3);
 }
 .btn-primary:active { transform: scale(0.95); }
 
 .btn-icon { background: none; border: none; font-size: 1.4rem; cursor: pointer; padding: 4px; }
-.btn-back { background: none; border: none; color: var(--primary); font-weight: 600; font-size: 15px; margin-bottom: 12px; cursor: pointer; display: inline-flex; align-items: center; }
+.btn-back {
+    background: none;
+    border: none;
+    color: var(--primary);
+    font-weight: 800; /* Aumentamos el peso */
+    font-size: 16px; 
+    margin-bottom: 20px; /* Más espacio */
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    text-transform: uppercase; /* Lo hace ver más como un comando */
+    letter-spacing: 0.5px;
+}
 .btn-edit { background: transparent; border: none; cursor: pointer; padding: 8px; border-radius: 8px; font-size: 1.1rem; opacity: 0.6; }
 .btn-edit:active { background: var(--surface); opacity: 1; }
 
@@ -203,11 +228,47 @@ h1, h2 {
 
 /* Estilo opcional para diferenciar más los completados */
 .item-completed {
-    background-color: rgba(255, 255, 255, 0.02); /* Un fondo sutilmente más oscuro */
+    background-color: transparent !important;
+    border-color: transparent !important;
+    opacity: 0.5; /* Se desvanece para dar foco a lo pendiente */
+    filter: grayscale(0.5);
 }
 
 
 .btn-copy:hover {
     transform: scale(1.2);
     filter: drop-shadow(0 0 5px rgba(0, 255, 127, 0.4));
+}
+
+.tabs-container {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 20px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 10px;
+}
+
+.tab-btn {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    padding: 5px 10px;
+    position: relative;
+}
+
+.tab-btn.active {
+    color: var(--primary);
+}
+
+.tab-btn.active::after {
+    content: "";
+    position: absolute;
+    bottom: -11px;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background: var(--primary);
 }

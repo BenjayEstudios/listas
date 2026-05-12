@@ -1,3 +1,8 @@
+// --- CONFIGURACIÓN GLOBAL ---
+// Capturamos el usuario de la URL actual (?user=Benjamin)
+const urlParams = new URLSearchParams(window.location.search);
+const USUARIO_ACTUAL = urlParams.get('user') || 'Anonimo'; 
+
 // --- CONFIGURACIÓN DE TEMA ---
 function toggleTheme() {
     const html = document.documentElement;
@@ -11,7 +16,22 @@ function toggleTheme() {
 document.addEventListener('DOMContentLoaded', () => {
     const savedTheme = localStorage.getItem('theme') || 'dark';
     document.documentElement.setAttribute('data-theme', savedTheme);
+    
+    // Personalización visual del título según el usuario
+    const tituloPrincipal = document.querySelector('h1');
+    if (tituloPrincipal) tituloPrincipal.innerText = `Listas de ${USUARIO_ACTUAL}`;
+    
     obtenerListas();
+
+    // Escuchar Enter en el input de nuevas listas
+    document.getElementById('nombreLista').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') crearNuevaLista();
+    });
+
+    // Escuchar Enter en el input de nuevos ítems
+    document.getElementById('nuevoItemInput').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') crearItem();
+    });
 });
 
 // --- RUTAS Y ESTADO ---
@@ -22,7 +42,8 @@ let listaIdActual = null;
 // --- 1. LÓGICA DE LISTAS ---
 async function obtenerListas() {
     try {
-        const res = await fetch(API_LISTAS);
+        // Enviamos el usuario como parámetro GET para filtrar en el servidor
+        const res = await fetch(`${API_LISTAS}?user=${USUARIO_ACTUAL}`);
         const listas = await res.json();
         renderizarListas(listas);
     } catch (error) {
@@ -40,7 +61,8 @@ async function crearNuevaLista() {
         await fetch(API_LISTAS, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ nombre: nombre, creador: 'Benjamin' })
+            // Enviamos el USUARIO_ACTUAL capturado de la URL
+            body: JSON.stringify({ nombre: nombre, creador: USUARIO_ACTUAL })
         });
         input.value = '';
         obtenerListas();
@@ -69,7 +91,7 @@ async function editarLista(id, nombreActual) {
 function renderizarListas(listas) {
     const contenedor = document.getElementById('contenedorListas');
     if (listas.length === 0) {
-        contenedor.innerHTML = '<p style="color: var(--text-muted); text-align:center; padding:20px;">No hay listas creadas.</p>';
+        contenedor.innerHTML = '<p style="color: var(--text-muted); text-align:center; padding:20px;">No hay listas para este usuario.</p>';
         return;
     }
 
@@ -89,7 +111,7 @@ function renderizarListas(listas) {
 }
 
 async function borrarLista(id) {
-    const confirmacion = confirm("¿Estás seguro? Se borrará la lista y todos sus elementos contenidos.");
+    const confirmacion = confirm("¿Estás seguro? Se borrará la lista y todos sus elementos.");
     if (!confirmacion) return;
 
     try {
@@ -99,12 +121,7 @@ async function borrarLista(id) {
             body: JSON.stringify({ id: id })
         });
         const data = await res.json();
-        
-        if (data.success) {
-            obtenerListas();
-        } else {
-            alert("Error: " + data.message);
-        }
+        if (data.success) obtenerListas();
     } catch (error) {
         console.error("Error al borrar lista:", error);
     }
@@ -113,7 +130,6 @@ async function borrarLista(id) {
 // --- 2. NAVEGACIÓN ---
 function verDetalleLista(id, nombre) {
     listaIdActual = id;
-    // Usamos 'flex' en lugar de 'block' para no romper el layout
     document.getElementById('vistaListas').style.display = 'none';
     document.getElementById('vistaItems').style.display = 'flex'; 
     document.getElementById('tituloListaActual').innerText = nombre;
@@ -131,7 +147,7 @@ function regresarAListas() {
 async function cargarItems() {
     try {
         const res = await fetch(`${API_ITEMS}?lista_id=${listaIdActual}`);
-        let items = await res.json(); // Cambiamos const por let para poder ordenar
+        let items = await res.json();
         const contenedor = document.getElementById('contenedorItems');
 
         if (items.length === 0) {
@@ -139,9 +155,6 @@ async function cargarItems() {
             return;
         }
 
-        // --- LÓGICA DE ORDENAMIENTO ---
-        // Ordenamos: los que NO están completados (0) primero, 
-        // los que SÍ están completados (1) al final.
         items.sort((a, b) => Number(a.completado) - Number(b.completado));
 
         contenedor.innerHTML = items.map(item => {
@@ -169,7 +182,6 @@ async function cargarItems() {
 async function crearItem() {
     const input = document.getElementById('nuevoItemInput');
     const contenido = input.value.trim();
-
     if (!contenido) return;
 
     try {
@@ -193,48 +205,36 @@ async function editarItem(id, contenidoActual) {
         const res = await fetch(API_ITEMS, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-                id: id, 
-                contenido: nuevoContenido.trim(),
-                op: 'update_text' // Operación específica
-            })
+            body: JSON.stringify({ id: id, contenido: nuevoContenido.trim(), op: 'update_text' })
         });
-        const data = await res.json();
-        if (data.success) cargarItems();
+        if ((await res.json()).success) cargarItems();
     } catch (error) {
         console.error("Error al editar item:", error);
     }
 }
 
 async function borrarItem(id) {
-    if (!confirm("¿Seguro que quieres eliminar este elemento?")) return;
-
+    if (!confirm("¿Eliminar este elemento?")) return;
     try {
         const res = await fetch(API_ITEMS, {
             method: 'DELETE',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ id: id })
         });
-        const data = await res.json();
-        if (data.success) cargarItems();
+        if ((await res.json()).success) cargarItems();
     } catch (error) {
         console.error("Error al borrar item:", error);
     }
 }
+
 async function copiarLista(id) {
     try {
-        // Usamos el método 'COPY' que definimos en el PHP
-        // Si tu servidor no soporta el método COPY, usa POST y ajusta el PHP
         const res = await fetch(API_LISTAS, {
             method: 'COPY', 
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ id: id })
         });
-        
-        const data = await res.json();
-        if (data.success) {
-            obtenerListas(); // Refrescar la vista
-        }
+        if ((await res.json()).success) obtenerListas();
     } catch (error) {
         console.error("Error al copiar lista:", error);
     }
