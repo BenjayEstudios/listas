@@ -206,6 +206,21 @@ h1, h2 {
     margin-left: auto; /* Empuja los botones a la derecha */
 }
 
+/* --- ICONOS PROFESIONALES DE ACCIONES --- */
+.actions button {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: 1rem;
+    padding: 6px;
+    transition: transform 0.2s, color 0.2s;
+    color: var(--text-muted);
+}
+
+.actions button:hover {
+    transform: scale(1.2);
+}
+
 .btn-edit, .btn-delete, .btn-copy {
     background: none;
     border: none;
@@ -214,7 +229,10 @@ h1, h2 {
     padding: 4px;
     transition: transform 0.2s;
 }
-
+.btn-edit:hover { color: #3b82f6; }       /* Azul */
+.btn-delete:hover { color: #dc2626; }     /* Rojo */
+.btn-copy:hover { color: #10b981; }       /* Verde */
+.btn-share:hover { color: var(--primary); } /* Naranja */
 .btn-delete:hover {
     transform: scale(1.2);
     filter: drop-shadow(0 0 5px rgba(255,0,0,0.3));

@@ -1,7 +1,12 @@
 <?php
 header("Content-Type: application/json");
-// require_once '../config/db.php'; # test
-require_once '../../../db.php'; # prod
+if (in_array($_SERVER['HTTP_HOST'], ['localhost', '127.0.0.1'])) {
+    // Entorno de desarrollo local
+    require_once '../config/db.php';
+} else {
+    // Entorno de producción (benjayapps.cl)
+    require_once '../../../db.php';
+}
 
 
 $method = $_SERVER['REQUEST_METHOD'];

@@ -43,6 +43,7 @@ document.addEventListener('DOMContentLoaded', () => {
 const API_LISTAS = 'api/listas.php';
 const API_ITEMS  = 'api/items.php';
 let listaIdActual = null;
+let paginaActualItems = 1;
 
 // --- 1. LÓGICA DE LISTAS ---
 async function obtenerListas() {
@@ -151,7 +152,6 @@ function renderizarListas(listas) {
     }
 
     contenedor.innerHTML = listas.map(lista => {
-        // Cálculo del porcentaje en frío
         const total = parseInt(lista.total_items) || 0;
         const completados = parseInt(lista.completados) || 0;
         const porcentaje = total > 0 ? Math.round((completados / total) * 100) : 0;
@@ -164,9 +164,10 @@ function renderizarListas(listas) {
                     <small>Creado por ${lista.creador}</small>
                 </div>
                 <div class="actions">
-                    <button class="btn-edit" onclick="event.stopPropagation(); editarLista(${lista.id}, '${lista.nombre.replace(/'/g, "\\'")}')">✏️</button>
-                    <button class="btn-delete" onclick="event.stopPropagation(); borrarLista(${lista.id})">🗑️</button>
-                    <button class="btn-copy" onclick="event.stopPropagation(); copiarLista(${lista.id})">📋</button>
+                    <button class="btn-share" onclick="event.stopPropagation(); abrirModalCompartir(${lista.id})" title="Compartir"><i class="fas fa-share-nodes"></i></button>
+                    <button class="btn-copy" onclick="event.stopPropagation(); copiarLista(${lista.id})" title="Duplicar"><i class="fas fa-copy"></i></button>
+                    <button class="btn-edit" onclick="event.stopPropagation(); editarLista(${lista.id}, '${lista.nombre.replace(/'/g, "\\'")}')" title="Editar"><i class="fas fa-pen"></i></button>
+                    <button class="btn-delete" onclick="event.stopPropagation(); borrarLista(${lista.id})" title="Eliminar"><i class="fas fa-trash"></i></button>
                 </div>
             </div>
             
@@ -179,6 +180,46 @@ function renderizarListas(listas) {
         </div>
         `;
     }).join('');
+}
+
+// --- LOGICA DE CONTROL PARA COMPARTIR ---
+function abrirModalCompartir(id) {
+    listaIdACompartir = id;
+    document.getElementById('modalCompartir').style.display = 'flex';
+    document.getElementById('usuarioCompartirInput').focus();
+}
+
+function cerrarModalCompartir() {
+    document.getElementById('modalCompartir').style.display = 'none';
+    listaIdACompartir = null;
+    document.getElementById('usuarioCompartirInput').value = '';
+}
+
+async function ejecutarCompartirDefinitiva() {
+    if (!listaIdACompartir) return;
+
+    const usernameTarget = document.getElementById('usuarioCompartirInput').value.trim();
+    if (!usernameTarget) return;
+
+    try {
+        const res = await fetch(API_LISTAS, {
+            method: 'SHARE', // Usamos método personalizado compatible con tu backend
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: listaIdACompartir, usuario_compartir: usernameTarget })
+        });
+        
+        const data = await res.json();
+        
+        if (data.success) {
+            cerrarModalCompartir();
+            alert('Lista compartida correctamente.');
+        } else {
+            alert(data.message || 'No se pudo compartir la lista.');
+        }
+    } catch (error) {
+        console.error("Error al compartir lista:", error);
+        cerrarModalCompartir();
+    }
 }
 
 // Al inicio del archivo o en la sección de RUTAS Y ESTADO, declara:
@@ -219,6 +260,7 @@ async function ejecutarEliminacionDefinitiva() {
 // --- 2. NAVEGACIÓN ---
 function verDetalleLista(id, nombre) {
     listaIdActual = id;
+    paginaActualItems = 1; // Reinicia a la primera pestaña siempre
     document.getElementById('vistaListas').style.display = 'none';
     document.getElementById('vistaItems').style.display = 'flex'; 
     document.getElementById('tituloListaActual').innerText = nombre;
@@ -238,24 +280,49 @@ async function cargarItems() {
         const res = await fetch(`${API_ITEMS}?lista_id=${listaIdActual}`);
         let items = await res.json();
         const contenedor = document.getElementById('contenedorItems');
+        const tabsContainer = document.getElementById('tabsItemsContainer');
 
         if (items.length === 0) {
             contenedor.innerHTML = '<p style="color: var(--text-muted); text-align:center; padding:20px;">Esta lista está vacía.</p>';
+            tabsContainer.style.display = 'none';
             return;
         }
 
+        // Ordenar: Pendientes primero, completados al fondo
         items.sort((a, b) => Number(a.completado) - Number(b.completado));
 
-        contenedor.innerHTML = items.map(item => {
+        // --- LÓGICA DE PESTAÑAS (10 POR CAPA) ---
+        const itemsPorPestana = 10;
+        const totalPaginas = Math.ceil(items.length / itemsPorPestana);
+        
+        // Ajuste defensivo por si se elimina un ítem y reduce el número de páginas
+        if (paginaActualItems > totalPaginas) paginaActualItems = totalPaginas || 1;
+
+        // Renderizar barra de pestañas de tareas si supera el límite de 10
+        if (totalPaginas > 1) {
+            tabsContainer.innerHTML = Array.from({ length: totalPaginas }, (_, i) => {
+                const numPag = i + 1;
+                return `<button class="tab-btn ${paginaActualItems === numPag ? 'active' : ''}" onclick="cambiarPestanaItems(${numPag})">Parte ${numPag}</button>`;
+            }).join('');
+            tabsContainer.style.display = 'flex';
+        } else {
+            tabsContainer.style.display = 'none';
+        }
+
+        // Segmentación del array en frío
+        const inicio = (paginaActualItems - 1) * itemsPorPestana;
+        const fin = inicio + itemsPorPestana;
+        const itemsSegmentados = items.slice(inicio, fin);
+
+        contenedor.innerHTML = itemsSegmentados.map(item => {
             const estaCompletado = Number(item.completado) === 1;
             const tieneEtiqueta = item.etiqueta && item.etiqueta.trim() !== "";
-            // Si tiene etiqueta, la renderiza anteponiendo el '#' automáticamente
             const etiquetaHTML = tieneEtiqueta ? `<span class="badge-tag">#${item.etiqueta}</span>` : '';
 
             return `
                 <div class="list-item ${estaCompletado ? 'item-completed' : ''}" 
-                    onclick="toggleItem(${item.id}, ${estaCompletado ? 1 : 0})" 
-                    style="cursor:pointer;">
+                     onclick="toggleItem(${item.id}, ${estaCompletado ? 1 : 0})" 
+                     style="cursor:pointer;">
                     <div class="check-circle ${estaCompletado ? 'active' : ''}">${estaCompletado ? '✓' : ''}</div>
                     <div class="item-content">
                         <strong>${item.contenido}</strong>
@@ -271,6 +338,12 @@ async function cargarItems() {
     } catch (error) {
         console.error("Error al cargar items:", error);
     }
+}
+
+// Función contenedora para cambiar de bloque
+function cambiarPestanaItems(numeroPagina) {
+    paginaActualItems = numeroPagina;
+    cargarItems();
 }
 
 async function crearItem() {
