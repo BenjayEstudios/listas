@@ -164,10 +164,10 @@ h1, h2 {
 /* --- COMPONENTES DE LISTA --- */
 .list-item {
     gap: 12px;
-    padding: 12px;
+    padding: 18px 20px; /* Incrementado para dar más altura y aire a cada fila */
     background: var(--item-bg);
-    margin-bottom: 8px;
-    border-radius: 12px;
+    margin-bottom: 12px; /* Más separación vertical entre listas */
+    border-radius: 14px;
     display: flex; 
     align-items: center;
     justify-content: space-between;
@@ -271,4 +271,113 @@ h1, h2 {
     width: 100%;
     height: 2px;
     background: var(--primary);
+}
+
+/* --- MODAL DE ELIMINACIÓN --- */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7); /* Oscurece el fondo */
+    backdrop-filter: blur(8px); /* Difumina el resto de la pantalla */
+    -webkit-backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 20px;
+    animation: fadeInModal 0.2s ease-out;
+}
+
+.modal-content {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 24px;
+    border-radius: 16px;
+    max-width: 360px;
+    width: 100%;
+    text-align: center;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+    animation: scaleUpModal 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.modal-content h3 {
+    font-size: 1.15rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+    color: var(--text-main);
+}
+
+.modal-content p {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    margin-bottom: 24px;
+}
+
+.modal-actions {
+    display: flex;
+    gap: 12px;
+}
+
+.modal-actions button {
+    flex: 1;
+    padding: 14px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: transform 0.1s, opacity 0.2s;
+}
+
+.modal-actions button:active {
+    transform: scale(0.98);
+}
+
+.btn-secondary {
+    background: var(--border);
+    color: var(--text-main);
+}
+
+.btn-danger {
+    background: #dc2626; /* Rojo sólido */
+    color: #ffffff;
+}
+
+/* Animaciones */
+@keyframes fadeInModal {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes scaleUpModal {
+    from { transform: scale(0.92); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+
+.btn-confirm {
+    background: var(--primary);
+    color: #ffffff;
+}
+
+/* --- ADAPTACIÓN RESPONSIVA PARA WEB / PC --- */
+@media (min-width: 768px) {
+    .app-container {
+        max-width: 720px; /* Amplía el ancho de la app en monitores de escritorio */
+    }
+    
+    .item-content strong {
+        font-size: 17px; /* Escala el título de la lista para pantallas grandes */
+    }
+    
+    .item-content small {
+        font-size: 13px;
+    }
+    
+    .list-item {
+        padding: 22px 24px; /* Mayor altura exclusiva para la versión de escritorio */
+        margin-bottom: 16px;
+    }
 }

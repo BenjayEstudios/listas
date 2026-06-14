@@ -42,12 +42,32 @@ let listaIdActual = null;
 // --- 1. LÓGICA DE LISTAS ---
 async function obtenerListas() {
     try {
-        // Enviamos el usuario como parámetro GET para filtrar en el servidor
         const res = await fetch(`${API_LISTAS}?user=${USUARIO_ACTUAL}`);
-        const listas = await res.json();
-        renderizarListas(listas);
+        const textoRespuesta = await res.text(); 
+        
+        try {
+            let listas = JSON.parse(textoRespuesta); 
+
+            // Ordenar: Listas con 0% arriba, 100% abajo.
+            listas.sort((a, b) => {
+                const totalA = parseInt(a.total_items) || 0;
+                const compA = parseInt(a.completados) || 0;
+                const progresoA = totalA > 0 ? (compA / totalA) : 0;
+
+                const totalB = parseInt(b.total_items) || 0;
+                const compB = parseInt(b.completados) || 0;
+                const progresoB = totalB > 0 ? (compB / totalB) : 0;
+
+                return progresoA - progresoB;
+            });
+
+            renderizarListas(listas);
+        } catch (errorParseo) {
+            console.error("El servidor devolvió un error crudo:", textoRespuesta);
+        }
+        
     } catch (error) {
-        console.error("Error al obtener listas:", error);
+        console.error("Error de red al obtener listas:", error);
     }
 }
 
@@ -71,20 +91,50 @@ async function crearNuevaLista() {
     }
 }
 
-async function editarLista(id, nombreActual) {
-    const nuevoNombre = prompt("Editar nombre de la lista:", nombreActual);
-    if (!nuevoNombre || nuevoNombre.trim() === "" || nuevoNombre === nombreActual) return;
+// En tu sección de RUTAS Y ESTADO:
+let listaIdAEditar = null;
+
+// Reemplaza tu función editarLista actual
+function editarLista(id, nombreActual) {
+    listaIdAEditar = id;
+    const input = document.getElementById('nuevoNombreListaInput');
+    input.value = nombreActual;
+    document.getElementById('modalEditar').style.display = 'flex';
+    
+    // Forzar el foco al final del texto cargado
+    input.focus();
+    input.setSelectionRange(input.value.length, input.value.length);
+}
+
+function cerrarModalEditar() {
+    document.getElementById('modalEditar').style.display = 'none';
+    listaIdAEditar = null;
+    document.getElementById('nuevoNombreListaInput').value = '';
+}
+
+// Ejecuta la petición PUT definitiva hacia la API
+async function ejecutarEdicionDefinitiva() {
+    if (!listaIdAEditar) return;
+
+    const input = document.getElementById('nuevoNombreListaInput');
+    const nuevoNombre = input.value.trim();
+
+    if (!nuevoNombre) return;
 
     try {
         const res = await fetch(API_LISTAS, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ id: id, nombre: nuevoNombre.trim() })
+            body: JSON.stringify({ id: listaIdAEditar, nombre: nuevoNombre })
         });
         const data = await res.json();
-        if (data.success) obtenerListas();
+        if (data.success) {
+            cerrarModalEditar();
+            obtenerListas();
+        }
     } catch (error) {
         console.error("Error al editar lista:", error);
+        cerrarModalEditar();
     }
 }
 
@@ -95,35 +145,69 @@ function renderizarListas(listas) {
         return;
     }
 
-    contenedor.innerHTML = listas.map(lista => `
-        <div class="list-item" onclick="verDetalleLista(${lista.id}, '${lista.nombre.replace(/'/g, "\\'")}')" style="cursor:pointer">
-            <div class="item-content">
-                <strong>${lista.nombre}</strong>
-                <small>Creado por ${lista.creador}</small>
+    contenedor.innerHTML = listas.map(lista => {
+        // Cálculo del porcentaje en frío
+        const total = parseInt(lista.total_items) || 0;
+        const completados = parseInt(lista.completados) || 0;
+        const porcentaje = total > 0 ? Math.round((completados / total) * 100) : 0;
+
+        return `
+        <div class="list-item" onclick="verDetalleLista(${lista.id}, '${lista.nombre.replace(/'/g, "\\'")}')" style="cursor:pointer; flex-direction: column; align-items: stretch; gap: 8px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                <div class="item-content" style="margin-right: 0;">
+                    <strong>${lista.nombre}</strong>
+                    <small>Creado por ${lista.creador}</small>
+                </div>
+                <div class="actions">
+                    <button class="btn-edit" onclick="event.stopPropagation(); editarLista(${lista.id}, '${lista.nombre.replace(/'/g, "\\'")}')">✏️</button>
+                    <button class="btn-delete" onclick="event.stopPropagation(); borrarLista(${lista.id})">🗑️</button>
+                    <button class="btn-copy" onclick="event.stopPropagation(); copiarLista(${lista.id})">📋</button>
+                </div>
             </div>
-            <div class="actions">
-                <button class="btn-edit" onclick="event.stopPropagation(); editarLista(${lista.id}, '${lista.nombre.replace(/'/g, "\\'")}')">✏️</button>
-                <button class="btn-delete" onclick="event.stopPropagation(); borrarLista(${lista.id})">🗑️</button>
-                <button class="btn-copy" onclick="event.stopPropagation(); copiarLista(${lista.id})">📋</button>
+            
+            <div style="display: flex; align-items: center; gap: 10px; width: 100%;">
+                <div style="background: var(--surface); border: 1px solid var(--border); border-radius: 10px; height: 6px; flex-grow: 1; overflow: hidden;">
+                    <div style="height: 100%; width: ${porcentaje}%; background: var(--primary); transition: width 0.3s ease;"></div>
+                </div>
+                <span style="font-size: 0.75rem; font-weight: 800; color: var(--text-muted); min-width: 35px; text-align: right;">${porcentaje}%</span>
             </div>
         </div>
-    `).join('');
+        `;
+    }).join('');
 }
 
-async function borrarLista(id) {
-    const confirmacion = confirm("¿Estás seguro? Se borrará la lista y todos sus elementos.");
-    if (!confirmacion) return;
+// Al inicio del archivo o en la sección de RUTAS Y ESTADO, declara:
+let listaIdAEliminar = null;
+
+// Reemplaza tu función borrarLista para que solo abra el modal e intercepte el ID
+function borrarLista(id) {
+    listaIdAEliminar = id;
+    document.getElementById('modalEliminar').style.display = 'flex';
+}
+
+function cerrarModalEliminar() {
+    document.getElementById('modalEliminar').style.display = 'none';
+    listaIdAEliminar = null;
+}
+
+// Esta función ejecuta la petición DELETE definitiva que antes hacía el confirm nativo
+async function ejecutarEliminacionDefinitiva() {
+    if (!listaIdAEliminar) return;
 
     try {
         const res = await fetch(API_LISTAS, {
             method: 'DELETE',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ id: id })
+            body: JSON.stringify({ id: listaIdAEliminar })
         });
         const data = await res.json();
-        if (data.success) obtenerListas();
+        if (data.success) {
+            cerrarModalEliminar();
+            obtenerListas();
+        }
     } catch (error) {
         console.error("Error al borrar lista:", error);
+        cerrarModalEliminar();
     }
 }
 
@@ -227,16 +311,38 @@ async function borrarItem(id) {
     }
 }
 
-async function copiarLista(id) {
+// En tu sección de RUTAS Y ESTADO:
+let listaIdACopiar = null;
+
+// Reemplaza tu función copiarLista actual
+function copiarLista(id) {
+    listaIdACopiar = id;
+    document.getElementById('modalCopiar').style.display = 'flex';
+}
+
+function cerrarModalCopiar() {
+    document.getElementById('modalCopiar').style.display = 'none';
+    listaIdACopiar = null;
+}
+
+// Ejecuta la petición COPY hacia la API
+async function ejecutarCopiaDefinitiva() {
+    if (!listaIdACopiar) return;
+
     try {
         const res = await fetch(API_LISTAS, {
             method: 'COPY', 
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ id: id })
+            body: JSON.stringify({ id: listaIdACopiar })
         });
-        if ((await res.json()).success) obtenerListas();
+        const data = await res.json();
+        if (data.success) {
+            cerrarModalCopiar();
+            obtenerListas();
+        }
     } catch (error) {
         console.error("Error al copiar lista:", error);
+        cerrarModalCopiar();
     }
 }
 

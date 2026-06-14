@@ -1,21 +1,36 @@
 <?php
 header("Content-Type: application/json");
-require_once '../../../db.php';
+// require_once '../../../db.php';
+require_once '../config/db.php'; # test
+
 
 $method = $_SERVER['REQUEST_METHOD'];
 
 try {
     switch($method) {
         case 'GET':
-            // Capturamos el usuario enviado desde el fetch en app.js
             $usuario = $_GET['user'] ?? null;
             
             if ($usuario) {
-                // Filtramos por creador para que Benjamin no vea las listas de otro
-                $stmt = $pdo->prepare("SELECT * FROM listas WHERE creador = ? ORDER BY created_at DESC");
+                $sql = "SELECT l.id, l.nombre, l.creador, l.estado, l.created_at,
+                               COUNT(i.id) AS total_items,
+                               SUM(CASE WHEN i.completado = 1 THEN 1 ELSE 0 END) AS completados
+                        FROM listas l
+                        LEFT JOIN items_lista i ON l.id = i.lista_id
+                        WHERE l.creador = ?
+                        GROUP BY l.id
+                        ORDER BY l.created_at DESC";
+                $stmt = $pdo->prepare($sql);
                 $stmt->execute([$usuario]);
             } else {
-                $stmt = $pdo->query("SELECT * FROM listas ORDER BY created_at DESC");
+                $sql = "SELECT l.id, l.nombre, l.creador, l.estado, l.created_at,
+                               COUNT(i.id) AS total_items,
+                               SUM(CASE WHEN i.completado = 1 THEN 1 ELSE 0 END) AS completados
+                        FROM listas l
+                        LEFT JOIN items_lista i ON l.id = i.lista_id
+                        GROUP BY l.id
+                        ORDER BY l.created_at DESC";
+                $stmt = $pdo->query($sql);
             }
             echo json_encode($stmt->fetchAll());
             break;

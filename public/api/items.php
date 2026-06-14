@@ -1,6 +1,8 @@
 <?php
 header("Content-Type: application/json");
-require_once '../../../db.php';
+require_once '../config/db.php'; # test
+// require_once '../../../db.php'; # prod
+
 
 $method = $_SERVER['REQUEST_METHOD'];
 
