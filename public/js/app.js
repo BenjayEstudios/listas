@@ -1,7 +1,12 @@
-// --- CONFIGURACIÓN GLOBAL ---
-// Capturamos el usuario de la URL actual (?user=Benjamin)
-const urlParams = new URLSearchParams(window.location.search);
-const USUARIO_ACTUAL = urlParams.get('user') || 'Anonimo'; 
+// --- CONFIGURACIÓN GLOBAL DE SEGURIDAD ---
+const USUARIO_ACTUAL = localStorage.getItem('user');
+
+// Si no hay sesión activa, bloquea el renderizado y redirige de inmediato
+if (!USUARIO_ACTUAL) {
+    window.location.href = 'login.html';
+}
+
+
 
 // --- CONFIGURACIÓN DE TEMA ---
 function toggleTheme() {
@@ -421,4 +426,10 @@ async function toggleItem(id, estadoActual) {
     } catch (error) {
         console.error("Error al actualizar item:", error);
     }
+}
+
+// Agrega esta función al final de tu js/app.js para destruir la sesión
+function cerrarSesion() {
+    localStorage.removeItem('user');
+    window.location.href = 'login.html';
 }

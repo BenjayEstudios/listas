@@ -28,5 +28,23 @@ CREATE TABLE items_lista (
         ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
+-- 1. Crear tabla de usuarios
+CREATE TABLE usuarios (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(50) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
+-- 2. Crear tabla intermedia para compartir listas (Relación Muchos a Muchos)
+CREATE TABLE listas_usuarios (
+    lista_id INT NOT NULL,
+    usuario_id INT NOT NULL,
+    rol ENUM('propietario', 'invitado') DEFAULT 'propietario',
+    PRIMARY KEY (lista_id, usuario_id),
+    FOREIGN KEY (lista_id) REFERENCES listas(id) ON DELETE CASCADE,
+    FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
 CREATE USER 'complentosDB'@'localhost' IDENTIFIED BY 'complementosDB';
 GRANT ALL PRIVILEGES ON complementos.* TO 'complentosDB'@'localhost';

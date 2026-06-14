@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Lista Pro | Acceso</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container" style="justify-content: center; padding: 20px;">
+        <div class="modal-content" style="animation: none; max-width: 100%;">
+            <span class="brand" style="font-size: 1.8rem; display: block; margin-bottom: 24px; text-align: center;">Lista<span>Pro</span></span>
+            
+            <div class="tabs-container" style="justify-content: center; margin-bottom: 24px;">
+                <button id="tab-login" class="tab-btn active" onclick="switchTab('login')">Ingresar</button>
+                <button id="tab-register" class="tab-btn" onclick="switchTab('register')">Registrarse</button>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 16px; margin-bottom: 24px;">
+                <div class="input-compact" style="margin: 0;">
+                    <input type="text" id="auth-username" placeholder="Usuario" style="width: 100%;">
+                </div>
+                <div class="input-compact" style="margin: 0;">
+                    <input type="password" id="auth-password" placeholder="Contraseña" style="width: 100%;" onkeypress="if(event.key === 'Enter') procesarAuth()">
+                </div>
+            </div>
+
+            <button class="btn-confirm" onclick="procesarAuth()" style="width: 100%; padding: 14px; border-radius: 12px; font-weight: 600; border: none; cursor: pointer;">
+                <span id="btn-text">Iniciar Sesión</span>
+            </button>
+            
+            <p id="auth-error" style="color: #dc2626; font-size: 13px; margin-top: 14px; font-weight: 600; display: none; text-align: center;"></p>
+        </div>
+    </div>
+    <script src="js/login.js"></script>
+</body>
+</html>

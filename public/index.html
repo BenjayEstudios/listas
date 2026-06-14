@@ -11,7 +11,10 @@
     <div class="app-container">
         <header>
             <span class="brand">Lista<span>Pro</span></span>
-            <button id="theme-toggle" onclick="toggleTheme()" class="btn-icon">🌓</button>
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <button onclick="cerrarSesion()" class="btn-icon" style="font-size: 1.1rem; opacity: 0.7;">🚪</button>
+                <button id="theme-toggle" onclick="toggleTheme()" class="btn-icon">🌓</button>
+            </div>
         </header>
  
         <main class="card">
