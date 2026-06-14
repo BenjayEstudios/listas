@@ -33,12 +33,11 @@ try {
             $data = json_decode(file_get_contents('php://input'), true);
             if (empty($data['id'])) throw new Exception("ID faltante");
 
-            // Si viene 'op' como update_text, editamos el contenido
             if (isset($data['op']) && $data['op'] === 'update_text') {
-                $stmt = $pdo->prepare("UPDATE items_lista SET contenido = ? WHERE id = ?");
-                $stmt->execute([$data['contenido'], $data['id']]);
+                // Actualiza contenido y etiqueta en la misma consulta
+                $stmt = $pdo->prepare("UPDATE items_lista SET contenido = ?, etiqueta = ? WHERE id = ?");
+                $stmt->execute([$data['contenido'], $data['etiqueta'] ?? null, $data['id']]);
             } else {
-                // De lo contrario, es el toggle de completado habitual
                 $stmt = $pdo->prepare("UPDATE items_lista SET completado = ? WHERE id = ?");
                 $stmt->execute([$data['completado'], $data['id']]);
             }

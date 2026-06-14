@@ -80,6 +80,38 @@
         </div>
     </div>
 
+    <div id="modalEliminarItem" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <h3>¿Eliminar esta tarea?</h3>
+            <p>Se borrará de forma permanente.</p>
+            <div class="modal-actions">
+                <button class="btn-secondary" onclick="cerrarModalEliminarItem()">Volver</button>
+                <button class="btn-danger" onclick="ejecutarEliminacionItemDefinitiva()">Eliminar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modalEditarItem" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <h3>Editar tarea</h3>
+            
+            <div style="margin-top: 16px; margin-bottom: 24px;">
+                <div class="input-compact" style="margin-bottom: 12px;">
+                    <input type="text" id="nuevoContenidoItemInput" placeholder="Contenido de la tarea" style="width: 100%;">
+                </div>
+                
+                <div class="input-compact" style="margin-bottom: 0;">
+                    <input type="text" id="nuevoEtiquetaItemInput" placeholder="Etiqueta (ej: Trabajo, Urgente)" style="width: 100%;" onkeypress="if(event.key === 'Enter') ejecutarEdicionItemDefinitiva()">
+                </div>
+            </div>
+
+            <div class="modal-actions">
+                <button class="btn-secondary" onclick="cerrarModalEditarItem()">Volver</button>
+                <button class="btn-confirm" onclick="ejecutarEdicionItemDefinitiva()">Guardar</button>
+            </div>
+        </div>
+    </div>
+
     <script src="js/app.js"></script>
 </body>
 </html>

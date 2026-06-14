@@ -243,16 +243,21 @@ async function cargarItems() {
 
         contenedor.innerHTML = items.map(item => {
             const estaCompletado = Number(item.completado) === 1;
+            const tieneEtiqueta = item.etiqueta && item.etiqueta.trim() !== "";
+            // Si tiene etiqueta, la renderiza anteponiendo el '#' automáticamente
+            const etiquetaHTML = tieneEtiqueta ? `<span class="badge-tag">#${item.etiqueta}</span>` : '';
+
             return `
                 <div class="list-item ${estaCompletado ? 'item-completed' : ''}" 
-                     onclick="toggleItem(${item.id}, ${estaCompletado ? 1 : 0})" 
-                     style="cursor:pointer;">
+                    onclick="toggleItem(${item.id}, ${estaCompletado ? 1 : 0})" 
+                    style="cursor:pointer;">
                     <div class="check-circle ${estaCompletado ? 'active' : ''}">${estaCompletado ? '✓' : ''}</div>
-                    <div class="item-content" style="${estaCompletado ? 'text-decoration: line-through; opacity: 0.5;' : ''}">
+                    <div class="item-content">
                         <strong>${item.contenido}</strong>
+                        ${etiquetaHTML}
                     </div>
                     <div class="actions">
-                        <button class="btn-edit" onclick="event.stopPropagation(); editarItem(${item.id}, '${item.contenido.replace(/'/g, "\\'")}')">✏️</button>
+                        <button class="btn-edit" onclick="event.stopPropagation(); editarItem(${item.id}, '${item.contenido.replace(/'/g, "\\'")}', '${(item.etiqueta || '').replace(/'/g, "\\'")}')">✏️</button>
                         <button class="btn-delete" onclick="event.stopPropagation(); borrarItem(${item.id})">🗑️</button> 
                     </div>
                 </div>
@@ -281,33 +286,91 @@ async function crearItem() {
     }
 }
 
-async function editarItem(id, contenidoActual) {
-    const nuevoContenido = prompt("Editar tarea:", contenidoActual);
-    if (!nuevoContenido || nuevoContenido.trim() === "" || nuevoContenido === contenidoActual) return;
+// --- VARIABLES DE ESTADO GLOBALES (Agrega estas dos) ---
+let itemIdAEditar = null;
+let itemIdAEliminar = null;
+
+// --- REEMPLAZO: LÓGICA DE EDICIÓN DE ÍTEM ---
+// --- REEMPLAZO DE CONTROL DE MODALES PARA ÍTEMS ---
+function editarItem(id, contenidoActual, etiquetaActual) {
+    itemIdAEditar = id;
+    document.getElementById('nuevoContenidoItemInput').value = contenidoActual;
+    document.getElementById('nuevoEtiquetaItemInput').value = etiquetaActual || '';
+    document.getElementById('modalEditarItem').style.display = 'flex';
+    
+    const input = document.getElementById('nuevoContenidoItemInput');
+    input.focus();
+    input.setSelectionRange(input.value.length, input.value.length);
+}
+
+function cerrarModalEditarItem() {
+    document.getElementById('modalEditarItem').style.display = 'none';
+    itemIdAEditar = null;
+    document.getElementById('nuevoContenidoItemInput').value = '';
+    document.getElementById('nuevoEtiquetaItemInput').value = '';
+}
+
+async function ejecutarEdicionItemDefinitiva() {
+    if (!itemIdAEditar) return;
+    
+    const contenido = document.getElementById('nuevoContenidoItemInput').value.trim();
+    let etiqueta = document.getElementById('nuevoEtiquetaItemInput').value.trim();
+    
+    // Control en frío: Limpia el '#' inicial si el usuario lo escribe por duplicado
+    if (etiqueta.startsWith('#')) {
+        etiqueta = etiqueta.replace(/^#+/, '').trim();
+    }
+    
+    if (!contenido) return;
 
     try {
         const res = await fetch(API_ITEMS, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ id: id, contenido: nuevoContenido.trim(), op: 'update_text' })
+            body: JSON.stringify({ 
+                id: itemIdAEditar, 
+                contenido: contenido, 
+                etiqueta: etiqueta || null, // Guarda NULL si el campo queda vacío
+                op: 'update_text' 
+            })
         });
-        if ((await res.json()).success) cargarItems();
+        if ((await res.json()).success) {
+            cerrarModalEditarItem();
+            cargarItems();
+        }
     } catch (error) {
         console.error("Error al editar item:", error);
+        cerrarModalEditarItem();
     }
 }
 
-async function borrarItem(id) {
-    if (!confirm("¿Eliminar este elemento?")) return;
+// --- REEMPLAZO: LÓGICA DE ELIMINACIÓN DE ÍTEM ---
+function borrarItem(id) {
+    itemIdAEliminar = id;
+    document.getElementById('modalEliminarItem').style.display = 'flex';
+}
+
+function cerrarModalEliminarItem() {
+    document.getElementById('modalEliminarItem').style.display = 'none';
+    itemIdAEliminar = null;
+}
+
+async function ejecutarEliminacionItemDefinitiva() {
+    if (!itemIdAEliminar) return;
+
     try {
         const res = await fetch(API_ITEMS, {
             method: 'DELETE',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ id: id })
+            body: JSON.stringify({ id: itemIdAEliminar })
         });
-        if ((await res.json()).success) cargarItems();
+        if ((await res.json()).success) {
+            cerrarModalEliminarItem();
+            cargarItems();
+        }
     } catch (error) {
         console.error("Error al borrar item:", error);
+        cerrarModalEliminarItem();
     }
 }
 

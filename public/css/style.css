@@ -177,8 +177,13 @@ h1, h2 {
 .list-item:active { transform: scale(0.98); }
 
 .item-content { flex: 1; margin-right: 10px; overflow: hidden; }
-.item-content strong { display: block; font-size: 15px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.item-content small { font-size: 12px; color: var(--text-muted); margin-top: 2px; display: block;}
+.item-content strong {
+    display: block;
+    font-size: 15px;
+    font-weight: 600;
+    white-space: normal; /* Permite el salto de línea */
+    word-wrap: break-word; /* Rompe palabras demasiado largas */
+}.item-content small { font-size: 12px; color: var(--text-muted); margin-top: 2px; display: block;}
 
 /* Checkbox visual */
 .check-circle {
@@ -191,6 +196,7 @@ h1, h2 {
     color: var(--bg);
     flex-shrink: 0;
     transition: background 0.2s;
+    margin-top: -2px;
 }
 .check-circle.active { background: var(--primary); }
 
@@ -219,6 +225,7 @@ h1, h2 {
 .list-item {
     animation: fadeIn 0.3s ease-out;
     transition: all 0.3s ease;
+    align-items: flex-start;
 }
 
 @keyframes fadeIn {
@@ -361,6 +368,21 @@ h1, h2 {
     background: var(--primary);
     color: #ffffff;
 }
+/* --- COMPONENTE DE ETIQUETAS (BADGE) --- */
+.badge-tag {
+    display: inline-block;
+    background: var(--surface);
+    color: var(--primary);
+    border: 1px solid var(--border);
+    font-size: 11px;
+    font-weight: 800;
+    padding: 2px 8px;
+    border-radius: 20px;
+    margin-top: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
 
 /* --- ADAPTACIÓN RESPONSIVA PARA WEB / PC --- */
 @media (min-width: 768px) {
